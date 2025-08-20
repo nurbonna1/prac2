@@ -1,5 +1,3 @@
-
-
 // This file is part of www.nand2tetris.org
 // and the book "The Elements of Computing Systems"
 // by Nisan and Schocken, MIT Press.
@@ -12,7 +10,9 @@
  * x+1, y+1, x-1, y-1, x&y, x|y on two 16-bit inputs, 
  * according to 6 input bits denoted zx,nx,zy,ny,f,no.
  *
- * For this version, zr and ng outputs are not implemented.
+ * Also outputs:
+ * zr = 1 if (out == 0), 0 otherwise
+ * ng = 1 if (out < 0), 0 otherwise
  */
 
 CHIP ALU {
@@ -27,8 +27,8 @@ CHIP ALU {
 
     OUT 
         out[16], // 16-bit output
-        zr, // not implemented
-        ng; // not implemented
+        zr, // 1 if (out == 0), 0 otherwise
+        ng; // 1 if (out < 0),  0 otherwise
 
     PARTS:
     // Process x
@@ -50,8 +50,14 @@ CHIP ALU {
     Not16(in=fOut, out=fNot);
     Mux16(a=fOut, b=fNot, sel=no, out=out);
 
-    // For ALU-nostat.tst, zr and ng are ignored.
-    // Just tie them to false.
-    Or(a=false, b=false, out=zr);
-    Or(a=false, b=false, out=ng);
+    // Compute zr = 1 if out == 0
+    Or8Way(in=out[0..7], out=low8);
+    Or8Way(in=out[8..15], out=high8);
+    Or(a=low8, b=high8, out=anyBit);
+    Not(in=anyBit, out=zr);
+
+    // Compute ng = MSB of out
+    Or(a=out[15], b=false, out=ng);
 }
+
+
